@@ -17,7 +17,7 @@ env:
 jobs:
   # Run tests.
   prepare:
-    runs-on: debian-10
+    runs-on: debian-buster
 
     steps:
       - uses: actions/checkout@v1
