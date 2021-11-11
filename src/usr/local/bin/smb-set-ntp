@@ -1,0 +1,32 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-set-ntp
+########
+
+echo '# Local clock. Note that is not the "localhost" address!
+server 127.127.1.0 prefer
+fudge  127.127.1.0 stratum 10
+# Where to retrieve the time from
+server 0.pool.ntp.org     iburst prefer
+server 1.pool.ntp.org     iburst prefer
+server 2.pool.ntp.org     iburst prefer
+driftfile       /var/lib/ntp/ntp.drift
+logfile         /var/log/ntp
+ntpsigndsocket  /usr/share/samba/var/lib/samba/ntp_signd/
+# Access control
+# Default restriction: Allow clients only to query the time
+restrict default kod nomodify notrap nopeer mssntp
+# No restrictions for "localhost"
+restrict 127.0.0.1
+# Enable the time sources to only provide time to this host
+restrict 0.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
+restrict 1.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery
+restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery' > /etc/ntpd.conf  
+
+sleep 3
+
+chown root:ntp /usr/share/samba/var/lib/samba/ntp_signd/
+chmod 750 /usr/share/samba/var/lib/samba/ntp_signd/
+
+systemctl restart ntp

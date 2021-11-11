@@ -1,0 +1,38 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-set-ntp
+########
+IP_ADDRESS="$1"
+sed -i "/.*server.*/d" /etc/chrony.conf
+sed -i "1 i\server $IP_ADDRESS iburst" /etc/chrony.conf
+
+if grep -q "stratum" /etc/chrony.conf  ; then
+    sed -i 's/.*local\s*stratum.*/local stratum 10/g' /etc/chrony.conf
+else
+    echo "local stratum 10" >> /etc/chrony.conf 
+fi
+
+if grep -q "bindcmdaddress" /etc/chrony.conf  ; then
+    sed -i "s/bindcmdaddress\w+.*/bindcmdaddress $IP_ADDRESS/g" /etc/chrony.conf
+else
+    echo "bindcmdaddress $IP_ADDRESS" >> /etc/chrony.conf 
+fi
+
+if grep -q "ntpsigndsocket" /etc/chrony.conf  ; then
+    sed -i "s/ntpsigndsocket.*/ntpsigndsocket  \/var\/lib\/samba\/ntp_signd/g" /etc/chrony.conf
+else
+    echo "ntpsigndsocket  /var/lib/samba/ntp_signd" >> /etc/chrony.conf 
+fi
+
+if grep -q "maxdistance" /etc/chrony.conf  ; then
+    sed -i "s/maxdistance.*/maxdistance 100000/g" /etc/chrony.conf
+else
+    echo "maxdistance 100000" >> /etc/chrony.conf 
+fi
+
+mkdir -p /var/lib/samba/ntp_signd
+chown root:chrony /var/lib/samba/ntp_signd
+chmod 750 /var/lib/samba/ntp_signd
+
+systemctl restart chronyd

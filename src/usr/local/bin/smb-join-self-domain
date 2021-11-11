@@ -1,0 +1,80 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-join-self-domain
+########
+smb_conf_path="/etc/samba/smb.conf"
+
+# Check operation system
+if cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
+    echo "RHEL"
+    ## editing pam
+    sed -i "s/auth[[:space:]]\[success=1 default=ignore\][[:space:]]pam_unix.so nullok_secure$/auth sufficient pam_unix.so nullok_secure \n auth sufficient pam_winbind.so use_first_pass /g" /etc/pam.d/common-auth
+    sed -i "s/account[[:space:]]\[success=1 new_authtok_reqd=done default=ignore\][[:space:]]pam_unix.so$/account sufficient pam_winbind.so \n account sufficient pam_unix.so nullok_secure use_first_pass /g" /etc/pam.d/common-account
+    sed -i "s/password[[:space:]]\[success=1 default=ignore\][[:space:]]pam_unix.so obscure sha512$/password [success=2 default=ignore] pam_unix.so obscure sha512\n password sufficient pam_winbind.so use_authtok try_first_pass /g" /etc/pam.d/common-password
+    if ! grep -q "pam_mkhomedir.so" /etc/pam.d/common-session  ; then
+        echo "session required pam_mkhomedir.so umask=0077 skel=/etc/skel" >> /etc/pam.d/common-session
+    fi
+
+    ## editing nsswitch.conf
+    ## TODO : optimize nsswitch editing on ubuntu vs debian 
+    if grep -q "passwd.*winbind.*" /etc/nsswitch.conf; then 
+        echo "winbind already added passwd to nsswitch.conf"
+    else
+        sed -i 's/^passwd.*files/& winbind/' /etc/nsswitch.conf
+        sed -i 's/^passwd.*compat/& winbind/' /etc/nsswitch.conf
+    fi
+
+    if grep -q "group.*winbind.*" /etc/nsswitch.conf; then 
+        echo "winbind already added group to nsswitch.conf"
+    else
+        sed -i 's/^group.*files/& winbind/' /etc/nsswitch.conf
+        sed -i 's/^group.*compat/& winbind/' /etc/nsswitch.conf
+    fi
+elif cat /etc/os-release | grep ID_LIKE | grep -q "rhel"; then
+    echo "RHEL"
+    authselect select winbind with-mkhomedir --force
+    systemctl start oddjobd.service
+    systemctl enable oddjobd.service
+fi
+
+
+if ! grep -q "winbind refresh tickets" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i winbind refresh tickets = yes' $smb_conf_path
+fi
+if ! grep -q "vfs objects" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i vfs objects = dfs_samba4 acl_xattr recycle' $smb_conf_path
+fi
+if ! grep -q "map acl inherit" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i map acl inherit = Yes' $smb_conf_path
+fi
+if ! grep -q "store dos attributes" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i store dos attributes = yes' $smb_conf_path
+fi
+if ! grep -q "dedicated keytab file" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i dedicated keytab file = /etc/krb5.keytab' $smb_conf_path
+fi
+if ! grep -q "kerberos method" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i kerberos method = secrets and keytab' $smb_conf_path
+fi
+if ! grep -q "winbind use default domain" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i winbind use default domain = yes' $smb_conf_path
+fi
+if ! grep -q "winbind enum users" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i winbind enum users = yes' $smb_conf_path
+fi
+if ! grep -q "winbind enum groups" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i winbind enum groups = yes' $smb_conf_path
+fi
+if ! grep -q "template shell" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i template shell = /bin/bash' $smb_conf_path
+fi
+if ! grep -q "template homedir" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i template homedir = /home/%U' $smb_conf_path
+fi
+if ! grep -q "idmap config \* : backend" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i idmap config * : backend = tdb' $smb_conf_path
+fi
+if ! grep -q "idmap config \* : range" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i idmap config * : range = 3000-7999' $smb_conf_path
+fi

@@ -1,0 +1,47 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-create-self-signed-certificate "ORNEKDOMAIN.LAB" "LNXDC01"
+########
+
+# Variables
+cert_path="/var/lib/samba/private/tls/self-signed"
+smb_conf_path="/etc/samba/smb.conf"
+DOMAINNAME=$(echo $1 | tr '[:upper:]' '[:lower:]')
+HOSTNAME=$2
+BINDPATH=$(echo "DC="$DOMAINNAME | sed -r 's/\./\/DC=/g')
+WORKGROUP=$(echo $DOMAINNAME | cut -d. -f1)
+
+# Create cert directory
+mkdir -p $cert_path
+cd $cert_path
+
+# Create Root Certificates
+openssl genrsa -out KokCA.key 4096
+openssl req -new -x509 -days 1460 -key KokCA.key -out KokCA.crt -subj "/$BINDPATH/CN=$WORKGROUP-CA"
+
+# Create Server Certificate Key
+openssl genrsa -out Sunucu.key 2048
+
+# Create Server Certificate Request 
+openssl req -new -key Sunucu.key -out Sunucu.csr -subj "/CN=$HOSTNAME.$DOMAINNAME"
+
+# Create extra options for fingerprint
+echo """
+[v3_ca]
+subjectKeyIdentifier=hash
+authorityKeyIdentifier=keyid,issuer""" > ssl.cnf
+
+# Sign Server Certificate with Root Certificate
+openssl x509 -req -days 365 -in Sunucu.csr -CA KokCA.crt -CAkey KokCA.key  -out Sunucu.crt -sha256 -set_serial 0101 -extensions v3_ca -extfile ssl.cnf
+
+# Edit smb.conf
+if ! grep -q "tls" $smb_conf_path ; then
+    sed -i '/^\[sysvol\].*/i tls enabled = yes' $smb_conf_path
+    sed -i '/^\[sysvol\].*/i tls keyfile = '"$cert_path"'\/Sunucu.key' $smb_conf_path
+    sed -i '/^\[sysvol\].*/i tls certfile = '"$cert_path"'\/Sunucu.crt' $smb_conf_path
+    sed -i '/^\[sysvol\].*/i tls cafile = '"$cert_path"'\/KokCA.crt' $smb_conf_path
+fi
+
+rm Sunucu.csr ssl.cnf
+systemctl restart samba4.service

@@ -1,0 +1,26 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-set-krb5 "ORNEKDOMAIN.LAB"
+########
+
+PATH_KRB5_CONF="/etc/krb5.conf"
+REALM=$1
+
+if ! grep -q "default_realm" $PATH_KRB5_CONF  ; then
+    sed -i '/[libdefaults]/i default_realm' $PATH_KRB5_CONF
+else
+    sed -i "s/.*default_realm.*/default_realm = ${REALM}/g" $PATH_KRB5_CONF
+fi
+
+if ! grep -q "dns_lookup_realm" $PATH_KRB5_CONF  ; then
+    sed -i '/\[libdefaults\]/a dns_lookup_realm = false' $PATH_KRB5_CONF
+else
+    sed -i 's/dns_lookup_realm.\*/dns_lookup_realm = false/g' $PATH_KRB5_CONF
+fi
+
+if ! grep -q "dns_lookup_kdc" $PATH_KRB5_CONF  ; then
+    sed -i '/\[libdefaults\]/a dns_lookup_kdc = true' $PATH_KRB5_CONF
+else
+    sed -i 's/dns_lookup_kdc.\*/dns_lookup_kdc = true/g' $PATH_KRB5_CONF
+fi
