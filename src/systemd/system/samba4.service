@@ -1,0 +1,12 @@
+[Unit]
+Description=Samba AD Daemon
+Wants=network-online.target
+After=network.target network-online.target rsyslog.service
+[Service]
+Type=forking
+PIDFile=/run/samba/samba.pid
+LimitNOFILE=16384
+ExecStart=/usr/sbin/samba --daemon
+ExecReload=/bin/kill -HUP $MAINPID
+[Install]
+WantedBy=multi-user.target
