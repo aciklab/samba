@@ -1,0 +1,157 @@
+#!/bin/bash
+########
+# version: xxx
+# smb-create-domain -d "ORNEKDOMAIN.LAB" -p "Password" -r "192.168.1.5"
+########
+
+USAGE() { echo " ";
+        echo "smb-create-domain [options]";
+        echo "options:";
+        echo "-h, --help                show brief help";
+        echo "-d, --domain \"ORNEK.COM\"       specify the name of new domain";
+        echo "-r, --reverse \"192.168.1.5\"      specify the ip address of domain to create reverse zone";}
+
+# Get parameters
+if [ -z "$1" ] ; then
+    echo "Lütfen gerekli parametreleri giriniz. Yardım için (smb-create-domain -h)"
+    exit 1
+fi
+while getopts :hr:d:p: options; do
+    case ${options} in
+    h) USAGE; exit 1;;
+    r) IP_ADDRESS=${OPTARG};;
+    p) ADMIN_PASSWORD=${OPTARG};;
+    d) DOMAINNAME=${OPTARG};;
+    *) echo "Yardım için (smb-create-domain -h)"; exit;;
+    esac
+done
+
+if [ -z "$DOMAINNAME" ] ; then
+    echo "Lütfen domain girin. Yardım için (smb-create-domain -h) "
+    exit 1
+elif  [ -z "$ADMIN_PASSWORD" ] ; then
+    read -s -p "Administrator parolası: " ADMIN_PASSWORD
+fi
+
+# Get inputs 
+WORKGROUP=$(echo $DOMAINNAME | cut -d. -f1)
+HOSTNAME=$(hostname | cut -d "." -f 1)
+
+# Check installed domain configuration
+if test -f "/etc/samba/smb.conf"; then
+ while true; do
+    read -p "Mevcut smb.conf dosası bulundu. Daha önceki kurulan domain silinip, başka d domain kurulsun mu? [y/N]" yn
+    case $yn in
+        [Yy]* ) rm /etc/samba/smb.conf; break;;
+        [Nn]* ) exit;;
+        "" ) exit;;
+        * ) echo "Lütfen geçerli d değer girin [y/N] ";;
+    esac
+ done
+fi
+
+
+# Edit hostname
+if ! grep -q "*127.0.1.1*" /etc/hosts ; then
+    echo "127.0.1.1  $HOSTNAME.$DOMAINNAME   $HOSTNAME" >> /etc/hosts
+else
+    sed -Ei "s/127.0.1.1.*/127.0.1.1  $HOSTNAME.$DOMAINNAME   $HOSTNAME /g" /etc/hosts
+fi
+
+# Create domain
+samba-tool domain provision --server-role=dc --use-rfc2307 --dns-backend=SAMBA_INTERNAL --realm=$DOMAINNAME --domain=$WORKGROUP --adminpass=$ADMIN_PASSWORD
+if [ ! $? -eq 0 ]; then
+    exit 1
+fi
+
+# Enforce DNS to localhost
+chattr -i /etc/resolv.conf
+if ! grep -q "nameserver.*127.0.0.1" /etc/resolv.conf ; then
+    echo "nameserver 127.0.0.1" > /etc/resolv.conf
+fi
+chattr +i /etc/resolv.conf
+
+# Setup ntp server 
+if cat /etc/os-release | grep ID_LIKE | grep -q "rhel"; then
+    smb-set-chrony "127.0.0.1"
+elif cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
+    systemctl stop ntp
+    ntpdate 
+fi
+
+# Set DNS as forwarder 
+dns=$(/usr/local/bin/smb-dhcp-client 2> /dev/null | grep "Domain Name Server(s)" | cut -d : -f 2)
+if [ -z "$dns" ];then
+    echo "dns forwarder 127.0.0.1 olarak ayarlarlandı"
+else
+    sed -i "/dns\s*forwarder/d" /etc/samba/smb.conf
+    add="dns forwarder = $dns"
+    sed -i '2 a\ '"$(echo $add)"'' /etc/samba/smb.conf
+fi
+
+# Edit Configurations
+if ! grep -q "template shell" /etc/samba/smb.conf ; then
+    sed -i '/^\[sysvol\].*/i template shell = /bin/bash ' /etc/samba/smb.conf
+fi
+
+if ! grep -q "bind interfaces only" /etc/samba/smb.conf ; then
+    sed -i '/^\[sysvol\].*/i bind interfaces only = yes' /etc/samba/smb.conf
+fi
+
+if ! grep -q "template homedir" /etc/samba/smb.conf ; then
+    sed -i '/^\[sysvol\].*/i template homedir = /home/%U ' /etc/samba/smb.conf
+fi
+
+# Create self signed certificate
+if cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
+    smb-create-self-signed-certificate $DOMAINNAME $HOSTNAME 
+fi
+
+# Set krb.conf
+/usr/local/bin/smb-set-krb5  "$(echo "$DOMAINNAME" | tr a-z A-Z)"
+
+# Disable firewall
+if cat /etc/os-release | grep ID_LIKE | grep -q "rhel"; then
+    firewall-cmd --add-service={dns,kerberos,kpasswd,ldap,ldaps,samba} --permanent
+    firewall-cmd --add-port={135/tcp,137-138/udp,139/tcp,123/tcp,3268-3269/tcp,49152-65535/tcp} --permanent
+    firewall-cmd --add-port={135/udp,137-138/tcp,139/udp,123/udp,445/tcp,445/udp,389/tcp,389/udp,636/tcp,636/udp} --permanent
+    firewall-cmd --add-port={464/tcp,464/udp,53/tcp,53/udp,88/tcp,88/udp,3269/tcp,3268/tcp} --permanent
+    firewall-cmd --add-port={68/tcp,68/udp} --permanent
+    firewall-cmd --reload
+fi
+
+## Join self domain
+/usr/local/bin/smb-join-self-domain
+
+# Disable expiry date of Administrator password
+samba-tool user setexpiry Administrator --noexpiry
+
+sed -i "s/#PermitRootLogin prohibit-password$/PermitRootLogin yes/g" /etc/ssh/sshd_config
+
+# Restart services
+systemctl restart sshd.service
+systemctl daemon-reload
+systemctl enable samba4.service
+systemctl start samba4.service
+# systemctl restart sshd
+
+# Set reverse if not empty
+if [ ! -z "$IP_ADDRESS" ]
+then
+    IP=${IP_ADDRESS##*.} 
+    REVERSE_ZONE=$(echo ${IP_ADDRESS%.*} | awk 'BEGIN{FS="."}{print $3"."$2"."$1".in-addr.arpa"}')
+    # Create reverse zone
+    samba-tool dns zonecreate localhost $REVERSE_ZONE -U administrator --password $ADMIN_PASSWORD
+    # Add revese ip
+    samba-tool dns add localhost $REVERSE_ZONE $IP PTR $HOSTNAME -U administrator --password $ADMIN_PASSWORD
+
+fi
+
+samba_dnsupdate
+
+# Setup ntp server 
+if cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
+    smb-set-ntp
+else 
+    smb-set-chrony $IP_ADDRESS
+fi
