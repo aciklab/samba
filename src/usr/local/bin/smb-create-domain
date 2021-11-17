@@ -7,9 +7,10 @@
 USAGE() { echo " ";
         echo "smb-create-domain [options]";
         echo "options:";
-        echo "-h, --help                show brief help";
-        echo "-d, --domain \"ORNEK.COM\"       specify the name of new domain";
-        echo "-r, --reverse \"192.168.1.5\"      specify the ip address of domain to create reverse zone";}
+        echo "-h,                       show brief help";
+        echo "-d,   \"ORNEK.COM\"       specify the name of new domain";
+        echo "-p,   \"Passw0rd\"        specify the password of new domain";
+        echo "-r,   \"192.168.1.5\"     specify the ip address of domain to create reverse zone";}
 
 # Get parameters
 if [ -z "$1" ] ; then
