@@ -148,7 +148,7 @@ then
     # Create reverse zone
     samba-tool dns zonecreate localhost $REVERSE_ZONE -U administrator --password $ADMIN_PASSWORD
     # Add revese ip
-    samba-tool dns add localhost $REVERSE_ZONE $IP PTR $HOSTNAME -U administrator --password $ADMIN_PASSWORD
+    samba-tool dns add localhost $REVERSE_ZONE $IP PTR "${HOSTNAME,,}.${DOMAINNAME,,}" -U administrator --password $ADMIN_PASSWORD
 
 fi
 
