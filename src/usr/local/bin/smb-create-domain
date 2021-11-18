@@ -37,10 +37,19 @@ fi
 WORKGROUP=$(echo $DOMAINNAME | cut -d. -f1)
 HOSTNAME=$(hostname | cut -d "." -f 1)
 
+if [[ "$DOMAINNAME" == *"samba"* ]]; then
+    echo "Domain adında samba bulunamaz !"
+
+elif [[ "$WORKGROUP" == "$HOSTNAME" ]]; then
+    echo "Hostname ile etki alanı adı aynı olamaz !"
+fi
+
+
+
 # Check installed domain configuration
 if test -f "/etc/samba/smb.conf"; then
  while true; do
-    read -p "Mevcut smb.conf dosası bulundu. Daha önceki kurulan domain silinip, başka d domain kurulsun mu? [y/N]" yn
+    read -p "Mevcut smb.conf dosyası bulundu. Daha önceki kurulan domain silinip, başka d domain kurulsun mu? [y/N]" yn
     case $yn in
         [Yy]* ) rm /etc/samba/smb.conf; break;;
         [Nn]* ) exit;;
@@ -50,9 +59,14 @@ if test -f "/etc/samba/smb.conf"; then
  done
 fi
 
+specialCharacters=(':','?','"','<','>','|','&','*',',',"\\",'/')
+for i in ${specialCharacters[@]}; do
+    if [[ "$DOMAINNAME" == *"$i"* ]]; then
+    echo "Domain adında $i karakteri bulunamaz !"
+done
 
 # Edit hostname
-if ! grep -q "*127.0.1.1*" /etc/hosts ; then
+if ! grep -E "*127.0.1.1*" /etc/hosts ; then
     echo "127.0.1.1  $HOSTNAME.$DOMAINNAME   $HOSTNAME" >> /etc/hosts
 else
     sed -Ei "s/127.0.1.1.*/127.0.1.1  $HOSTNAME.$DOMAINNAME   $HOSTNAME /g" /etc/hosts
