@@ -7,9 +7,10 @@
 USAGE() { echo " ";
         echo "smb-create-domain [options]";
         echo "options:";
-        echo "-h, --help                show brief help";
-        echo "-d, --domain \"ORNEK.COM\"       specify the name of new domain";
-        echo "-r, --reverse \"192.168.1.5\"      specify the ip address of domain to create reverse zone";}
+        echo "-h,                       show brief help";
+        echo "-d,   \"ORNEK.COM\"       specify the name of new domain";
+        echo "-p,   \"Passw0rd\"        specify the password of new domain";
+        echo "-r,   \"192.168.1.5\"     specify the ip address of domain to create reverse zone";}
 
 # Get parameters
 if [ -z "$1" ] ; then
@@ -104,6 +105,11 @@ else
 fi
 
 # Edit Configurations
+
+if ! grep -q "ldap server require strong auth" /etc/samba/smb.conf ; then
+    sed -i '/^\[sysvol\].*/i ldap server require strong auth = allow_sasl_over_tls ' /etc/samba/smb.conf
+fi
+
 if ! grep -q "template shell" /etc/samba/smb.conf ; then
     sed -i '/^\[sysvol\].*/i template shell = /bin/bash ' /etc/samba/smb.conf
 fi
@@ -157,7 +163,7 @@ then
     # Create reverse zone
     samba-tool dns zonecreate localhost $REVERSE_ZONE -U administrator --password $ADMIN_PASSWORD
     # Add revese ip
-    samba-tool dns add localhost $REVERSE_ZONE $IP PTR $HOSTNAME -U administrator --password $ADMIN_PASSWORD
+    samba-tool dns add localhost $REVERSE_ZONE $IP PTR "${HOSTNAME,,}.${DOMAINNAME,,}" -U administrator --password $ADMIN_PASSWORD
 
 fi
 
