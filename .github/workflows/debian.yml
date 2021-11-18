@@ -58,6 +58,7 @@ jobs:
           echo "Package: sambahvl
           Version: ${{steps.date.outputs.date}}
           Installed-Size: $size
+          Priority: optional
           Maintainer: Duygu Ölmez <zeynepduyguolmez@gmail.com>, Zeki Ahmet Bayar <zekiahmetbayar1@gmail.com>
           Section: admin
           Depends: libcups2, libjansson4, libpython3.7, libgpgme11, ntpdate, krb5-user, python3-dnspython, openssh-server, ntp, python3-markdown, liblmdb0, openssl, libunwind-dev, libglib2.0-dev
