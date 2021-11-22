@@ -64,6 +64,7 @@ specialCharacters=(':','?','"','<','>','|','&','*',',',"\\",'/')
 for i in ${specialCharacters[@]}; do
     if [[ "$DOMAINNAME" == *"$i"* ]]; then
     echo "Domain adında $i karakteri bulunamaz !"
+    fi
 done
 
 # Edit hostname
