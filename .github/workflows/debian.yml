@@ -46,7 +46,7 @@ jobs:
         id: build_package
         run: |
           mkdir opt
-          tar -zxvf samba_source/*.tar.gz
+          tar -zxvf samba_source/samba-debian*.tar.gz
           cp -r opt/samba4/* src/
           mv build/debian src/DEBIAN
           cd src
