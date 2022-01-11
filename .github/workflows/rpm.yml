@@ -55,7 +55,7 @@ jobs:
           rpmbuildroot=$(pwd)/build
           echo "%_topdir            $rpmbuildroot/rpmbuild" > ~/.rpmmacros
           mkdir -p $rpmbuildroot/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-          cp -r src/usr/* $rpmbuildroot/opt/samba4/usr/
+          cp -r src/usr/* opt/samba4/usr/
           cp -r opt/samba4/* $rpmbuildroot/rpmbuild/BUILD
           
           build_number="${{ github.run_number }}"
