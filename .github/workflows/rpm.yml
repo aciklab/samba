@@ -57,10 +57,10 @@ jobs:
           mkdir -p $rpmbuildroot/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           cp -r opt/samba4/* $rpmbuildroot/rpmbuild/BUILD
           
-          rels="${{ github.run_number }}"
+          build_number="${{ github.run_number }}"
           echo """Name: sambahvl
           Version: $ver
-          Release: $rels
+          Release: $build_number
           Summary: Kurumsal Samba Paketi
           License: GPLv2
           Packager: Fatih Arslan Tugay
@@ -89,7 +89,7 @@ jobs:
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
           echo ::set-output name=path::$rpmpath
           echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
-          echo ::set-output name=version::$(echo $rels)
+          echo ::set-output name=version::$(echo $build_number)
           
       - name: Create Release
         id: create_release
@@ -97,8 +97,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.build_package.outputs.version}}
-          release_name: ${{steps.build_package.outputs.version}}
+          tag_name: $ver-${{steps.build_package.outputs.version}}
+          release_name: $ver-${{steps.build_package.outputs.version}}
           body: |
             Changes in this Release
             - Will be add.

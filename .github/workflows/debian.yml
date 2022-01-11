@@ -71,11 +71,12 @@ jobs:
           chmod 755 DEBIAN/postinst
           cd ../
           . build/version
-          package_name="debian-samba-$ver-"
-          mv src "$package_name"${{steps.date.outputs.date}}
-          dpkg-deb -Zgzip --build "$package_name"${{steps.date.outputs.date}}
-          echo ::set-output name=path::$(pwd)/"$package_name"${{steps.date.outputs.date}}.deb
-          echo ::set-output name=filename::"$package_name"${{steps.date.outputs.date}}.deb
+          build_number="${{ github.run_number }}"
+          package_name="debian-samba-$ver-$build_number"
+          mv src "$package_name"
+          dpkg-deb -Zgzip --build "$package_name"
+          echo ::set-output name=path::$(pwd)/"$package_name".deb
+          echo ::set-output name=filename::"$package_name".deb
           
       - name: Create Release
         id: create_release
@@ -83,8 +84,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.build_package.outputs.filename}}
-          release_name: ${{steps.build_package.outputs.filename}}
+          tag_name: $ver-${{steps.build_package.outputs.version}}
+          release_name: $ver-${{steps.build_package.outputs.version}}
           body: |
             Changes in this Release
             - Will be add.
