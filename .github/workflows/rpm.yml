@@ -56,10 +56,11 @@ jobs:
           echo "%_topdir            $rpmbuildroot/rpmbuild" > ~/.rpmmacros
           mkdir -p $rpmbuildroot/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           cp -r opt/samba4/* $rpmbuildroot/rpmbuild/BUILD
-
+          
+          rels="${{ github.run_number }}"
           echo """Name: sambahvl
           Version: $ver
-          Release: $rel
+          Release: $rels
           Summary: Kurumsal Samba Paketi
           License: GPLv2
           Packager: Fatih Arslan Tugay
@@ -88,7 +89,7 @@ jobs:
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
           echo ::set-output name=path::$rpmpath
           echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
-          echo ::set-output name=version::$(echo $ver)
+          echo ::set-output name=version::$(echo $rels)
           
       - name: Create Release
         id: create_release
