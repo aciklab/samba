@@ -85,8 +85,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
-          release_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          tag_name: release.deb.${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          release_name: "Release: deb ${{steps.build_package.outputs.version}}-${{ github.run_number }}"          
           body: |
             Changes in this Release
             - Will be add.

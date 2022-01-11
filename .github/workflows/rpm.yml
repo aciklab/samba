@@ -97,15 +97,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
-          release_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          tag_name: release.rpm.${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          release_name: "Release: rpm ${{steps.build_package.outputs.version}}-${{ github.run_number }}"
           body: |
             Changes in this Release
             - Will be add.
           draft: false
           prerelease: false
 
-      - name: Upload the Debian package to Release Assets
+      - name: Upload the CentOS package to Release Assets
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
