@@ -57,6 +57,8 @@ jobs:
           mkdir -p $rpmbuildroot/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
           cp -r opt/samba4/* $rpmbuildroot/rpmbuild/BUILD
           
+          cp -r src/usr $rpmbuildroot/opt/samba4/
+          
           build_number="${{ github.run_number }}"
           echo """Name: sambahvl
           Version: $ver

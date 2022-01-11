@@ -7,6 +7,9 @@ IP_ADDRESS="$1"
 sed -i "/.*server.*/d" /etc/chrony.conf
 sed -i "1 i\server $IP_ADDRESS iburst" /etc/chrony.conf
 
+sed -i "s/allow/d" /etc/chrony.conf
+sed -i "1 i/allow all" /etc/chrony.conf
+
 if grep -q "stratum" /etc/chrony.conf  ; then
     sed -i 's/.*local\s*stratum.*/local stratum 10/g' /etc/chrony.conf
 else
