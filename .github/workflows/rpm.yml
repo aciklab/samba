@@ -89,16 +89,16 @@ jobs:
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
           echo ::set-output name=path::$rpmpath
           echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
-          echo ::set-output name=version::$(echo $build_number)
-          
+          echo ::set-output name=version::"$ver"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: $ver-${{steps.build_package.outputs.version}}
-          release_name: $ver-${{steps.build_package.outputs.version}}
+          tag_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          release_name: ${{steps.build_package.outputs.version}}-${{ github.run_number }}
           body: |
             Changes in this Release
             - Will be add.
