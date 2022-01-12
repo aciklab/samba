@@ -49,7 +49,9 @@ jobs:
           . build/version
 
           mkdir opt
-          tar -zxvf samba_source/samba-rpm*.tar.gz
+          tar -zxvf samba_source/samba-centos*.tar.gz
+          mkdir -p opt/samba4/usr/lib/systemd/system/
+          cp etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
           ls -al /
 
           rpmbuildroot=$(pwd)/build
