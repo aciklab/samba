@@ -152,7 +152,7 @@ sed -i "s/#PermitRootLogin prohibit-password$/PermitRootLogin yes/g" /etc/ssh/ss
 # Add domain admins group to sudoers
 #grep -E \"%domain\x20admins\\s+ALL=(ALL)\\s+ALL\" /etc/sudoers.d/domainadmins || echo \"%domain\x20admins ALL=(ALL) ALL\" >> /etc/sudoers.d/domainadmins
 
-echo \"%domain\x20admins ALL=\(ALL\) ALL\" >> /etc/sudoers.d/domainadmins
+echo "%domain\x20admins ALL=\(ALL\) ALL" >> /etc/sudoers.d/domainadmins
 
 # Restart services
 systemctl restart sshd.service
