@@ -30,7 +30,16 @@ openssl req -new -key Sunucu.key -out Sunucu.csr -subj "/CN=$HOSTNAME.$DOMAINNAM
 echo """
 [v3_ca]
 subjectKeyIdentifier=hash
-authorityKeyIdentifier=keyid,issuer""" > ssl.cnf
+authorityKeyIdentifier=keyid,issuer
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1   = $DOMAINNAME
+DNS.2   = $HOSTNAME.$DOMAINNAME""" > ssl.cnf
+
+chown root:root cert_path/Sunucu.key
+chmod 600 cert_path/Sunucu.key
+chmod 644 cert_path/Sunucu.crt
 
 # Sign Server Certificate with Root Certificate
 openssl x509 -req -days 365 -in Sunucu.csr -CA KokCA.crt -CAkey KokCA.key  -out Sunucu.crt -sha256 -set_serial 0101 -extensions v3_ca -extfile ssl.cnf
