@@ -2,26 +2,20 @@ name: Generate Samba RPM Package
 
 on:
   push:
-    # Publish `master` as Docker `latest` image.
-    branches: [""]
-    
+    branches: ["main"]
     tags:
       - rpm*
       - all*
 
 
 env:
-  # TODO: Change variable to your image's name.
   IMAGE_NAME: generate_samba_rpm
 
 jobs:
-  # Run tests.
   prepare:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v1
-
       - name: Run tests
         run: |
           if ! [ -f Dockerfile ]; then
@@ -30,7 +24,6 @@ jobs:
     
   build:
     needs: prepare
-
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
 
@@ -48,7 +41,7 @@ jobs:
           sudo apt-get install rpm
           . build/version
           mkdir opt
-          tar -zxvf samba_source/samba-centos*.tar.gz
+          tar -zxvf samba_source/samba*.tar.gz
           mkdir -p opt/samba4/usr/lib/systemd/system/
           cp etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
           ls -al /
@@ -62,7 +55,7 @@ jobs:
           echo """Name: sambahvl
           Version: $ver
           Release: $build_number
-          Summary: Deb packages for Samba Configuration
+          Summary: Rpm package for Samba Configuration
           License: GPLv2
           Packager: Fatih Arslan Tugay
           Requires: iniparser libldb libtalloc libtdb libtevent gnutls-devel libacl-devel openldap-devel pam-devel readline-devel krb5-devel cups-devel epel-release python3-devel lmdb-devel lmdb gpgme-devel jansson-devel libarchive-devel python3 krb5-workstation python3-dns krb5-workstation avahi-libs avahi-libs oddjob oddjob-mkhomedir

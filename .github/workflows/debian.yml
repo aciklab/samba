@@ -61,7 +61,7 @@ jobs:
           Depends: libcups2, libjansson4, libpython3.7, libgpgme11, ntpdate, krb5-user, python3-dnspython, openssh-server, ntp, python3-markdown, liblmdb0, openssl, libunwind-dev, libglib2.0-dev
           Date : $GITHUB_RUN_ID
           Architecture: amd64
-          Description: Deb packages for Samba Configuration
+          Description: Deb package for Samba Configuration
           " > DEBIAN/control
           chmod 755 DEBIAN/postinst
           cd ../
