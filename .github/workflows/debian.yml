@@ -2,26 +2,20 @@ name: Generate Samba Debian Package
 
 on:
   push:
-    # Publish `master` as Docker `latest` image.
     branches: ["main"]
     
     tags:
       - deb*
       - all*
 
-
 env:
-  # TODO: Change variable to your image's name.
   IMAGE_NAME: generate_samba_deb
 
 jobs:
-  # Run tests.
   prepare:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v1
-
       - name: Run tests
         run: |
           if ! [ -f Dockerfile ]; then
@@ -47,15 +41,17 @@ jobs:
         run: |
           build_number="${{ github.run_number }}"
           mkdir opt
+
           tar -zxvf samba_source/*.tar.gz
           cp -r opt/samba4/* src/
           mv build/debian src/DEBIAN
           cd src
+
           touch DEBIAN/md5sums
           touch DEBIAN/control
           find ./ -type f -exec md5sum {} \; > DEBIAN/md5sums
-          cat DEBIAN/control
           size=$(du -s ../src | cut -f 1)
+
           echo "Package: sambahvl
           Version: $build_number
           Installed-Size: $size
@@ -67,11 +63,11 @@ jobs:
           Architecture: amd64
           Description: Deb packages for Samba Configuration
           " > DEBIAN/control
-          cat DEBIAN/control
           chmod 755 DEBIAN/postinst
           cd ../
+
           . build/version
-          package_name="debian-samba-$ver-$build_number"
+          package_name="sambahvl-$ver-$build_number"
           mv src "$package_name"
           dpkg-deb -Zgzip --build "$package_name"
           echo ::set-output name=path::$(pwd)/"$package_name".deb
@@ -87,7 +83,8 @@ jobs:
           release_name: ${{steps.build_package.outputs.filename}}
           body: |
             Changes in this Release
-            "${{ github.event.commits[0].message }}"
+
+            - ${{ github.event.commits[0].message }}
           draft: false
           prerelease: false
 
