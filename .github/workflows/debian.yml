@@ -40,8 +40,8 @@ jobs:
         id: build_package
         run: |
           build_number="${{ github.run_number }}"
-          mkdir opt
-          cp -r src deb_src
+          mkdir opt deb_src
+          cp -r src/* deb_src/
           tar -zxvf samba_source/*.tar.gz
           cp -r opt/samba4/* deb_src/
           mv build/debian deb_src/DEBIAN
