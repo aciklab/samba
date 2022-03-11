@@ -61,8 +61,8 @@ jobs:
           Date : $GITHUB_RUN_ID
           Architecture: amd64
           Description: Deb package for Samba Configuration
-          " > DEBIAN/control
-          chmod 755 DEBIAN/postinst
+          " > src/DEBIAN/control
+          chmod 755 src/DEBIAN/postinst
 
           . build/version
           package_name="sambahvl-$ver-$build_number"
