@@ -71,7 +71,8 @@ jobs:
           mv "$deb_package_name".deb /tmp/"$deb_package_name".deb
 
 
-          sudo apt-get install rpm
+          sudo apt-get install rpm locate
+          sudo updatedb
           mkdir -p opt/samba4/usr/lib/systemd/system/
           cp src/etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
           ls -al /
