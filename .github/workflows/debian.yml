@@ -47,10 +47,10 @@ jobs:
           mv build/debian src/DEBIAN
           cd src
 
-          touch DEBIAN/md5sums
-          touch DEBIAN/control
-          find ./ -type f -exec md5sum {} \; > DEBIAN/md5sums
-          size=$(du -s ../src | cut -f 1)
+          touch src/DEBIAN/md5sums
+          touch src/DEBIAN/control
+          find ./ -type f -exec md5sum {} \; > src/DEBIAN/md5sums
+          size=$(du -s src | cut -f 1)
 
           echo "Package: sambahvl
           Version: $build_number
@@ -64,7 +64,6 @@ jobs:
           Description: Deb package for Samba Configuration
           " > DEBIAN/control
           chmod 755 DEBIAN/postinst
-          cd ../
 
           . build/version
           package_name="sambahvl-$ver-$build_number"
@@ -73,6 +72,44 @@ jobs:
           echo ::set-output name=path::$(pwd)/"$package_name".deb
           echo ::set-output name=filename::"$package_name".deb
           
+          sudo apt-get install rpm
+          mkdir -p opt/samba4/usr/lib/systemd/system/
+          cp src/etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
+          ls -al /
+          rpmbuildroot=$(pwd)/build
+          echo "%_topdir            $rpmbuildroot/rpmbuild" > ~/.rpmmacros
+          mkdir -p $rpmbuildroot/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+          cp -r src/usr/* opt/samba4/usr/
+          cp -r opt/samba4/* $rpmbuildroot/rpmbuild/BUILD
+          
+          build_number="${{ github.run_number }}"
+          echo """Name: sambahvl
+          Version: $ver
+          Release: $build_number
+          Summary: Rpm package for Samba Configuration
+          License: GPLv2
+          Packager: Fatih Arslan Tugay
+          Requires: iniparser libldb libtalloc libtdb libtevent gnutls-devel libacl-devel openldap-devel pam-devel readline-devel krb5-devel cups-devel epel-release python3-devel lmdb-devel lmdb gpgme-devel jansson-devel libarchive-devel python3 krb5-workstation python3-dns krb5-workstation avahi-libs avahi-libs oddjob oddjob-mkhomedir
+          %description
+          Kurumsal ihtiyaclara gore derlenmis samba paketi
+          %install
+          mkdir -p %{buildroot}
+          cp -ra * %{buildroot}/
+          %post
+          kill -TERM 1
+          chmod +x /usr/local/bin/smb*
+          ln -s /usr/local/bin/* /usr/bin/
+          systemctl stop sssd
+          systemctl disable sssd
+          %files""" > $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          find ./opt/samba4/  -type f,l  | sort  | sed "s+.*opt/samba4++g" | grep -v "\/man\/"  >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          find ./opt/samba4/ -depth -empty -type d | sed "s+.*opt/samba4++g" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          echo "%define _unpackaged_files_terminate_build 0" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          rpmbuild -ba  $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
+          echo ::set-output name=path::$rpmpath
+          echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
+          echo ::set-output name=version::"$ver"
       - name: Create Release
         id: create_release
         uses: actions/create-release@master

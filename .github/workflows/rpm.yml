@@ -86,10 +86,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: release.rpm.${{steps.build_package.outputs.version}}-${{ github.run_number }}
-          release_name: "Release: rpm ${{steps.build_package.outputs.version}}-${{ github.run_number }}"
+          release_name: "Release: rpm sambahvl-${{steps.build_package.outputs.version}}-${{ github.run_number }}"
           body: |
             Changes in this Release
-            - Will be add.
+            
+            - ${{ github.event.commits[0].message }}
           draft: false
           prerelease: false
 
