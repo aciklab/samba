@@ -108,7 +108,7 @@ jobs:
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
           rpm_package_name=$(echo $rpmpath | sed "s/.*\///")
           
-          mv "$rpm_package_name".rpm /tmp/"$rpm_package_name"
+          mv "$rpm_package_name" /tmp/"$rpm_package_name"
 
           echo ::set-output name=deb_package::"/tmp/$deb_package_name".deb
           echo ::set-output name=rpm_package::"/tmp/$rpm_package_name"
