@@ -65,12 +65,12 @@ jobs:
           chmod 755 deb_src/DEBIAN/postinst
 
           . build/version
-          package_name="sambahvl-$ver-$build_number"
-          mv deb_src "$package_name"
-          dpkg-deb -Zgzip --build "$package_name"
-          echo ::set-output name=path::$(pwd)/"$package_name".deb
-          echo ::set-output name=filename::"$package_name".deb
-          
+          deb_package_name="sambahvl-$ver-$build_number"
+          mv deb_src "$deb_package_name"
+          dpkg-deb -Zgzip --build "$deb_package_name"
+          mv "$deb_package_name".deb /tmp/"$deb_package_name".deb
+
+
           sudo apt-get install rpm
           mkdir -p opt/samba4/usr/lib/systemd/system/
           cp src/etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
@@ -90,7 +90,7 @@ jobs:
           Packager: Fatih Arslan Tugay
           Requires: iniparser libldb libtalloc libtdb libtevent gnutls-devel libacl-devel openldap-devel pam-devel readline-devel krb5-devel cups-devel epel-release python3-devel lmdb-devel lmdb gpgme-devel jansson-devel libarchive-devel python3 krb5-workstation python3-dns krb5-workstation avahi-libs avahi-libs oddjob oddjob-mkhomedir
           %description
-          Kurumsal ihtiyaclara gore derlenmis samba paketi
+          Rpm package for Samba Configuration
           %install
           mkdir -p %{buildroot}
           cp -ra * %{buildroot}/
@@ -104,33 +104,26 @@ jobs:
           find ./opt/samba4/  -type f,l  | sort  | sed "s+.*opt/samba4++g" | grep -v "\/man\/"  >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
           find ./opt/samba4/ -depth -empty -type d | sed "s+.*opt/samba4++g" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
           echo "%define _unpackaged_files_terminate_build 0" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
-          rpmbuild -ba  $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
+          rpmbuild -ba  $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec 
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
-          echo ::set-output name=path::$rpmpath
-          echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
-          echo ::set-output name=version::"$ver"
-      - name: Create Release
+          rpm_package_name=$(echo $rpmpath | sed "s/.*\///")
+          
+          mv "$rpm_package_name".rpm /tmp/"$rpm_package_name".rpm
+
+          echo ::set-output name=deb_package::"/tmp/$deb_package_name".deb
+          echo ::set-output name=rpm_package::"/tmp/$rpm_package_name".rpm
+
+          
+
+      - name: Release
         id: create_release
-        uses: actions/create-release@master
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{steps.build_package.outputs.filename}}
-          release_name: ${{steps.build_package.outputs.filename}}
-          body: |
-            Changes in this Release
+            files: |
+              ${{steps.build_package.outputs.deb_package}}
+              ${{steps.build_package.outputs.rpm_package}}
 
-            - ${{ github.event.commits[0].message }}
-          draft: false
-          prerelease: false
-
-      - name: Upload the Debian package to Release Assets
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.build_package.outputs.path }}
-          asset_name: ${{ steps.build_package.outputs.filename }}
-          asset_content_type: application/vnd.debian.binary-package
+            name: "Release ${{ github.run_number }}"
+            tag_name: "release.${{ github.run_number }}"
