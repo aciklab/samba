@@ -36,7 +36,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d-%H%M%S')"
         
-      - name: Build Debian Package
+      - name: Build
         id: build_package
         run: |
           build_number="${{ github.run_number }}"
