@@ -111,7 +111,7 @@ jobs:
           mv "$rpm_package_name".rpm /tmp/"$rpm_package_name".rpm
 
           echo ::set-output name=deb_package::"/tmp/$deb_package_name".deb
-          echo ::set-output name=rpm_package::"/tmp/$rpm_package_name".rpm
+          echo ::set-output name=rpm_package::"/tmp/$rpm_package_name"
 
           
 
