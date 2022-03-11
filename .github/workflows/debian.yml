@@ -139,7 +139,7 @@ jobs:
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload the CentOS package to Release Assets
-        id: upload-release-asset
+        id: upload-release-asset-2
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
