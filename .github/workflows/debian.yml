@@ -66,7 +66,7 @@ jobs:
 
           . build/version
           package_name="sambahvl-$ver-$build_number"
-          cp deb_src "$package_name"
+          mv deb_src "$package_name"
           dpkg-deb -Zgzip --build "$package_name"
           echo ::set-output name=path::$(pwd)/"$package_name".deb
           echo ::set-output name=filename::"$package_name".deb
