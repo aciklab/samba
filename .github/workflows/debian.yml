@@ -41,9 +41,9 @@ jobs:
         run: |
           build_number="${{ github.run_number }}"
           mkdir opt
-          cp src deb_src
+          cp -r src deb_src
           tar -zxvf samba_source/*.tar.gz
-          cp -r opt/samba4/* src/
+          cp -r opt/samba4/* deb_src/
           mv build/debian deb_src/DEBIAN
 
           touch deb_src/DEBIAN/md5sums
