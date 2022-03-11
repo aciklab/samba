@@ -68,11 +68,8 @@ jobs:
           deb_package_name="sambahvl-$ver-$build_number"
           mv deb_src "$deb_package_name"
           dpkg-deb -Zgzip --build "$deb_package_name"
-          mv "$deb_package_name".deb /tmp/"$deb_package_name".deb
 
-
-          sudo apt-get install rpm locate
-          sudo updatedb
+          sudo apt-get install rpm
           mkdir -p opt/samba4/usr/lib/systemd/system/
           cp src/etc/systemd/system/samba4.service opt/samba4/usr/lib/systemd/system/
           ls -al /
@@ -107,25 +104,47 @@ jobs:
           echo "%define _unpackaged_files_terminate_build 0" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
           rpmbuild -ba  $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec 
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
-          rpm_package=$(echo $rpmpath | sed "s/.*\///")
-          rpm_package_name=$(locate rpm_package)
-          ls -la
-          mv "$rpm_package_name" /tmp/"$rpm_package"
 
-          echo ::set-output name=deb_package::"/tmp/$deb_package_name".deb
-          echo ::set-output name=rpm_package::"/tmp/$rpm_package_name"
 
-          
+          echo ::set-output name=path_deb::$(pwd)/"$deb_package_name".deb
+          echo ::set-output name=filename_deb::"$package_name".deb
 
-      - name: Release
+          echo ::set-output name=path::$rpmpath
+          echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
+          echo ::set-output name=version::"$ver"
+
+      - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
+        uses: actions/create-release@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-            files: |
-              ${{steps.build_package.outputs.deb_package}}
-              ${{steps.build_package.outputs.rpm_package}}
+          tag_name: release.rpm.${{steps.build_package.outputs.version}}-${{ github.run_number }}
+          release_name: "Release: rpm ${{steps.build_package.outputs.version}}-${{ github.run_number }}"
+          body: |
+            Changes in this Release
+            - ${{ github.event.commits[0].message }}
+          draft: false
+          prerelease: false
 
-            name: "Release ${{ github.run_number }}"
-            tag_name: "release.${{ github.run_number }}"
+      - name: Upload the Debian package to Release Assets
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.build_package.outputs.path_deb }}
+          asset_name: ${{ steps.build_package.outputs.filename_deb }}
+          asset_content_type: application/vnd.debian.binary-package
+
+      - name: Upload the CentOS package to Release Assets
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.build_package.outputs.path }}
+          asset_name: ${{ steps.build_package.outputs.filename }}
+          asset_content_type: application/vnd.debian.binary-package
