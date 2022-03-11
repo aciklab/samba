@@ -45,7 +45,6 @@ jobs:
           tar -zxvf samba_source/*.tar.gz
           cp -r opt/samba4/* src/
           mv build/debian src/DEBIAN
-          cd src
 
           touch src/DEBIAN/md5sums
           touch src/DEBIAN/control
