@@ -106,9 +106,10 @@ jobs:
           echo "%define _unpackaged_files_terminate_build 0" >> $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec
           rpmbuild -ba  $rpmbuildroot/rpmbuild/SPECS/sambahvl.spec 
           rpmpath=$(find $rpmbuildroot/rpmbuild/RPMS/ -type f)
-          rpm_package_name=$(echo $rpmpath | sed "s/.*\///")
+          rpm_package=$(echo $rpmpath | sed "s/.*\///")
+          rpm_package_name=$(locate rpm_package)
           ls -la
-          mv "$rpm_package_name" /tmp/"$rpm_package_name"
+          mv "$rpm_package_name" /tmp/"$rpm_package"
 
           echo ::set-output name=deb_package::"/tmp/$deb_package_name".deb
           echo ::set-output name=rpm_package::"/tmp/$rpm_package_name"
