@@ -107,7 +107,7 @@ jobs:
 
 
           echo ::set-output name=path_deb::$(pwd)/"$deb_package_name".deb
-          echo ::set-output name=filename_deb::"$package_name".deb
+          echo ::set-output name=filename_deb::"$deb_package_name".deb
 
           echo ::set-output name=path::$rpmpath
           echo ::set-output name=filename::$(echo $rpmpath | sed "s/.*\///")
@@ -120,7 +120,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: release.rpm.${{steps.build_package.outputs.version}}-${{ github.run_number }}
-          release_name: "Release: rpm ${{steps.build_package.outputs.version}}-${{ github.run_number }}"
+          release_name: "Release: ${{ github.run_number }}"
           body: |
             Changes in this Release
             - ${{ github.event.commits[0].message }}
