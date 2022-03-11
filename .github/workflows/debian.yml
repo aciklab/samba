@@ -45,6 +45,7 @@ jobs:
       - name: Build Debian Package
         id: build_package
         run: |
+          build_number="${{ github.run_number }}"
           mkdir opt
           tar -zxvf samba_source/*.tar.gz
           cp -r opt/samba4/* src/
@@ -56,7 +57,7 @@ jobs:
           cat DEBIAN/control
           size=$(du -s ../src | cut -f 1)
           echo "Package: sambahvl
-          Version: ${{steps.date.outputs.date}}
+          Version: $build_number
           Installed-Size: $size
           Priority: optional
           Maintainer: Duygu Ölmez <zeynepduyguolmez@gmail.com>, Zeki Ahmet Bayar <zekiahmetbayar1@gmail.com>
@@ -64,18 +65,17 @@ jobs:
           Depends: libcups2, libjansson4, libpython3.7, libgpgme11, ntpdate, krb5-user, python3-dnspython, openssh-server, ntp, python3-markdown, liblmdb0, openssl, libunwind-dev, libglib2.0-dev
           Date : $GITHUB_RUN_ID
           Architecture: amd64
-          Description: Deb packages for Samba
-            Deb packages for Samba
+          Description: Deb packages for Samba Configuration
           " > DEBIAN/control
           cat DEBIAN/control
           chmod 755 DEBIAN/postinst
           cd ../
           . build/version
-          package_name="debian-samba-$ver-"
-          mv src "$package_name"${{steps.date.outputs.date}}
-          dpkg-deb -Zgzip --build "$package_name"${{steps.date.outputs.date}}
-          echo ::set-output name=path::$(pwd)/"$package_name"${{steps.date.outputs.date}}.deb
-          echo ::set-output name=filename::"$package_name"${{steps.date.outputs.date}}.deb
+          package_name="debian-samba-$ver-$build_number"
+          mv src "$package_name"
+          dpkg-deb -Zgzip --build "$package_name"
+          echo ::set-output name=path::$(pwd)/"$package_name".deb
+          echo ::set-output name=filename::"$package_name".deb
           
       - name: Create Release
         id: create_release
@@ -87,7 +87,7 @@ jobs:
           release_name: ${{steps.build_package.outputs.filename}}
           body: |
             Changes in this Release
-            - Will be add.
+            "${{ github.event.commits[0].message }}"
           draft: false
           prerelease: false
 
