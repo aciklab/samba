@@ -7,7 +7,7 @@ smb_conf_path="/etc/samba/smb.conf"
 
 # Check operation system
 if cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
-    echo "RHEL"
+    echo "Distro DEB"
     ## editing pam
     sed -i "s/auth[[:space:]]\[success=1 default=ignore\][[:space:]]pam_unix.so nullok_secure$/auth sufficient pam_unix.so nullok_secure \n auth sufficient pam_winbind.so use_first_pass /g" /etc/pam.d/common-auth
     sed -i "s/account[[:space:]]\[success=1 new_authtok_reqd=done default=ignore\][[:space:]]pam_unix.so$/account sufficient pam_winbind.so \n account sufficient pam_unix.so nullok_secure use_first_pass /g" /etc/pam.d/common-account
@@ -32,7 +32,7 @@ if cat /etc/os-release | grep ID_LIKE | grep -q "debian"; then
         sed -i 's/^group.*compat/& winbind/' /etc/nsswitch.conf
     fi
 elif cat /etc/os-release | grep ID_LIKE | grep -q "rhel"; then
-    echo "RHEL"
+    echo "Distro RHEL"
     authselect select winbind with-mkhomedir --force
     systemctl start oddjobd.service
     systemctl enable oddjobd.service
