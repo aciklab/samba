@@ -103,7 +103,7 @@ jobs:
           chmod 755 deb_src/DEBIAN/postinst
 
           . build/version
-          deb_package_name="sambahvl-$ver-$build_number"
+          deb_package_name="sambahvl-debian-$ver-$build_number"
           mv deb_src "$deb_package_name"
           dpkg-deb -Zgzip --build "$deb_package_name"
 
@@ -184,8 +184,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.build_package.outputs.path_ubuntu }}
-          asset_name: ${{ steps.build_package.outputs.filename_ubuntu }}
+          asset_path: ${{ steps.build_ubuntu_package.outputs.path_ubuntu }}
+          asset_name: ${{ steps.build_ubuntu_package.outputs.filename_ubuntu }}
           asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload the CentOS package to Release Assets
