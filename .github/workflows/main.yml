@@ -35,14 +35,52 @@ jobs:
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y%m%d-%H%M%S')"
+
+      - name: Build Deb Package For Ubuntu
+        id: build_ubuntu_package
+        run: |
+          build_number="${{ github.run_number }}"
+          mkdir opt ubuntu_src
+          cp -r src/* ubuntu_src/
+          tar -zxvf samba_source/samba-ubuntu*.tar.gz
+          cp -r opt/samba4/* ubuntu_src/
+          cp -r build/debian ubuntu_src/DEBIAN
+
+          touch ubuntu_src/DEBIAN/md5sums
+          touch ubuntu_src/DEBIAN/control
+          find ./ -type f -exec md5sum {} \; > ubuntu_src/DEBIAN/md5sums
+          size=$(du -s ubuntu_src | cut -f 1)
+
+          echo "Package: sambahvl
+          Version: $build_number
+          Installed-Size: $size
+          Priority: optional
+          Maintainer: Duygu Ölmez <zeynepduyguolmez@gmail.com>, Zeki Ahmet Bayar <zekiahmetbayar1@gmail.com>
+          Section: admin
+          Depends: libcups2, libjansson4, libpython3.7, libgpgme11, ntpdate, krb5-user, python3-dnspython, openssh-server, ntp, python3-markdown, liblmdb0, openssl, libunwind-dev, libglib2.0-dev
+          Date : $GITHUB_RUN_ID
+          Architecture: amd64
+          Description: Deb package for Samba Configuration
+          " > ubuntu_src/DEBIAN/control
+          chmod 755 ubuntu_src/DEBIAN/postinst
+
+          . build/version
+          ubuntu_package_name="sambahvl-ubuntu-$ver-$build_number"
+          mv ubuntu_src "$ubuntu_package_name"
+          dpkg-deb -Zgzip --build "$ubuntu_package_name"
+
+          echo ::set-output name=path_ubuntu::$(pwd)/"$ubuntu_package_name".deb
+          echo ::set-output name=filename_ubuntu::"$ubuntu_package_name".deb
         
-      - name: Build
+      - name: Build Packages for RPM and Deb
         id: build_package
         run: |
+          rm -rf opt
+          rm -rf ubuntu_src
           build_number="${{ github.run_number }}"
           mkdir opt deb_src
           cp -r src/* deb_src/
-          tar -zxvf samba_source/*.tar.gz
+          tar -zxvf samba_source/samba-debian*.tar.gz
           cp -r opt/samba4/* deb_src/
           mv build/debian deb_src/DEBIAN
 
@@ -138,9 +176,20 @@ jobs:
           asset_path: ${{ steps.build_package.outputs.path_deb }}
           asset_name: ${{ steps.build_package.outputs.filename_deb }}
           asset_content_type: application/vnd.debian.binary-package
+      
+      - name: Upload the Ubuntu package to Release Assets
+        id: upload-release-asset-2
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.build_package.outputs.path_ubuntu }}
+          asset_name: ${{ steps.build_package.outputs.filename_ubuntu }}
+          asset_content_type: application/vnd.debian.binary-package
 
       - name: Upload the CentOS package to Release Assets
-        id: upload-release-asset-2
+        id: upload-release-asset-3
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
