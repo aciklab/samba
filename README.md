@@ -10,3 +10,11 @@ Samba debian/rpm package generator.
 - **Debian 10 Buster**
 - **Ubuntu 20.04 Focal**
 - **Rocky Linux**
+
+# Usage
+
+Create new domain with samba-hvl
+
+```bash
+smb-create-domain -d "acik.lab" -r "10.10.10.5"
+```
